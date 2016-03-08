@@ -1,0 +1,124 @@
+---
+title: 'MIE237'
+author: "Neil Montgomery"
+date: "2016-03-01"
+output: 
+  ioslides_presentation: 
+    css: 'styles.css' 
+    widescreen: true 
+    transition: 0.001
+---
+\newcommand{\Var}[1]{\text{Var}\left( #1 \right)}
+\newcommand{\E}[1]{E\left( #1 \right)}
+\newcommand{\Sample}[1]{#1_1,\ldots,#1_n}
+\newcommand{\od}[2]{\overline #1_{#2\cdot}}
+\newcommand{\flist}[2]{\{#1_1, #1_2, \ldots, #1_#2\}}
+\newcommand{\samp}[2]{#1_1, #1_2, \ldots, #1_#2}
+\renewcommand{\bar}[1]{\overline{#1}}
+\newcommand{\ve}{\varepsilon}
+\newcommand{\bs}[1]{\boldsymbol{#1}}
+
+
+
+```{r, echo=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+library(dplyr)
+data(trees)
+```
+
+## Recap
+
+Model:
+$$\begin{align*}
+y_i &= \beta_0 + \beta_1 x_{1i} + \cdots \beta_k x_{ki} + \ve_i\\
+\bs y &= \bs{X\beta} + \bs\ve
+\end{align*}$$
+
+with the $\ve_i$ i.i.d. $N(0, \sigma^2)$. 
+
+Solution and details. The $\bs{(X^\prime X)^{-1}}$ is key to the whole operation.
+$$\begin{align*}
+\bs{\hat\beta} &= \bs{(X^\prime X)^{-1}X^\prime y}\\
+\Var{\bs{\hat\beta}} &= \sigma^2\bs{(X^\prime X)^{-1}}
+\end{align*}$$
+
+## `trees` example 
+
+```{r}
+trees %>% 
+  lm(Volume ~ Girth + Height, data = .) -> trees_lm
+
+summary(trees_lm)
+```
+
+## The "overall" hypothesis test { .build }
+
+$$\begin{align*}
+H_0:&\ \beta_1 = \beta_2 = \cdots = \beta_k = 0\\
+H_1:&\ \text{Any } \beta_i\ne 0
+\end{align*}$$
+
+Similar to before. Last time we had $SST = SSR + SSE$ with $n-1$, $k$, and $n-(k+1)$ degrees of freedom. From this we can define $MSR = SSR/k$ and we use:
+$$\frac{MSR}{MSE} \sim F_{k, n-(k+1)}$$
+
+(Note: there is no $T^2 = F$ relationship to be had, unlike in the simple regression case.)
+
+## `trees` example again
+
+```{r}
+trees %>% 
+  lm(Volume ~ Girth + Height, data = .) %>% 
+  summary
+```
+
+## `trees` ANOVA table
+
+```{r, echo=TRUE}
+trees %>% 
+  lm(Volume ~ Girth + Height, data = .) %>% 
+  anova
+```
+
+In R the regression SS line is split up into all the 1 degree of freedom components (i.e. one for each input variable). They could be added up to get $SSR$. 
+
+## $R^2$
+
+Same as before:
+$$R^2 = \frac{\text{SSR}}{\text{SST}} = 1-\frac{\text{SSE}}{\text{SST}}$$
+
+Same old meaning, now with even more potential for abuse!
+
+(Note: square root of $R^2$ is now nothing in particular in multiple regression)
+ 
+## Mean response (with confidence) - I { .build }
+
+The concept is the same as before. Let's say we have some new vector $\bs{x_0}$ defined as:
+$$\bs{x_0}^\prime = \left[ 1 \quad x_{10} \quad x_{20}\quad\cdots\quad x_{k0}\right]$$
+We need an estimate and a standard error for the estimate.
+
+The estimated mean response is simply $\hat y_0 = \hat\beta_0 + \hat\beta_1 x_{10} + \cdots \hat\beta_k x_{k0}$, or $\hat y_0 = \bs{x_0}^\prime \bs{\hat\beta}$.
+
+The variance is:
+$$\Var{\bs{x_0}^\prime \bs{\hat\beta}} = \bs{x_0}^\prime\Var{\bs{\hat\beta}}\bs{x_0} = \sigma^2\bs{x_0}^\prime\bs{(X^\prime X)^{-1}}\bs{x_0}$$
+
+## Mean response (with confidence) - II { .build }
+
+As usual the 95% confidence interval then becomes:
+$$\bs{x_0}^\prime \bs{\hat\beta} \pm t_{n-(k+1), 0.025}\sqrt{MSE}\sqrt{\bs{x_0}^\prime\bs{(X^\prime X)^{-1}}\bs{x_0}}$$
+
+This is definitely work for the computer only!
+
+The prediction interval for a new response at $$\bs{x_0}$$ is similarly:
+$$\bs{x_0}^\prime \bs{\hat\beta} \pm t_{n-(k+1), 0.025}\sqrt{MSE}\sqrt{1 + \bs{x_0}^\prime\bs{(X^\prime X)^{-1}}\bs{x_0}}$$
+
+## `trees` example
+
+Let's find the intervals at a `Girth` of 11 inches and a `Height` of 72 feet.
+
+```{r, echo=TRUE}
+x_0 <- data_frame(Girth = 11, Height = 72)
+predict(trees_lm, newdata=x_0, interval = "c")
+predict(trees_lm, newdata=x_0, interval = "p")
+```
+
+
