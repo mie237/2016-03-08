@@ -1,7 +1,7 @@
 ---
 title: 'MIE237'
 author: "Neil Montgomery"
-date: "2016-03-01"
+date: "2016-03-08"
 output: 
   ioslides_presentation: 
     css: 'styles.css' 
